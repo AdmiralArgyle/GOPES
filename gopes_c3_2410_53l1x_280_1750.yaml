@@ -1,0 +1,354 @@
+##############################################################################
+# GOPES (GUPPI Occupancy and Presence Enhancement System)
+# Full Configuration File
+# Minimum ESPHome Version: 2024.12.4
+# Minimum Home Assistant Version: 2025.1.4
+##############################################################################
+
+# Basic substitutions for device configuration
+substitutions:
+  name: gopes-occupancy
+  friendly_name: "GOPES Occupancy"
+  device_description: "GUPPI Occupancy and Human Presence Sensor"
+  mqtt_root_topic: "GUPPI/GOPES"
+
+# Core ESPHome configuration
+esphome:
+  name: "${name}"
+  name_add_mac_suffix: true
+  friendly_name: "${friendly_name}"
+  project:
+    name: "guppi.gopes"
+    version: "1.0.0"
+    description: "${device_description}"
+  platformio_options:
+    board_build.flash_mode: qio
+    board_build.f_cpu: 240000000L
+    build_flags:
+      - "-DCORE_DEBUG_LEVEL=0"
+      - "-DCONFIG_ARDUHAL_LOG_DEFAULT_LEVEL=0"
+  libraries:
+    - "adafruit/Adafruit BME280 Library"
+    - "claws/BH1750"
+    - "pololu/VL53L1X"
+  includes:
+    - gopes_utils.h
+  on_boot:
+    priority: 600
+    then:
+      - delay: 2s
+      - logger.log: "GOPES device startup completed"
+
+# ESP32 specific configuration
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+  variant: esp32c3
+  flash_size: 4MB
+  cpu_frequency: 240MHz
+  
+# Enable minimal logging
+logger:
+  level: WARN
+  baud_rate: 0
+  logs:
+    sensor: WARN
+    binary_sensor: WARN
+    text_sensor: WARN
+    climate: WARN
+
+# Enable Home Assistant API with encryption
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 0s
+  services:
+    - service: reset_presence_counter
+      then:
+        - globals.set:
+            id: presence_counter
+            value: '0'
+    - service: calibrate_sensors
+      then:
+        - delay: 1s
+        - switch.turn_on: start_calibration
+
+# Enable OTA updates with password protection
+ota:
+  password: !secret ota_password
+  safe_mode: true
+  port: 8266
+
+# Enable Improv for initial setup
+improv_serial:
+  friendly_name: "${friendly_name}"
+
+# WiFi configuration
+wifi:
+  use_address: ${name}.local
+  output_power: 20dB
+  retry_timeout: 15min
+  ap:
+    ssid: "GOPES-Setup-${name}"
+    password: !secret fallback_ap_password
+  ap_timeout: 3min
+  domain: .local
+  power_save_mode: none
+  reboot_timeout: 0s
+  fast_connect: true
+
+# MQTT Configuration
+mqtt:
+  broker: !secret mqtt_broker
+  port: !secret mqtt_port
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  client_id: "${name}"
+  discovery: true
+  discovery_prefix: homeassistant
+  topic_prefix: "${mqtt_root_topic}/${name}"
+  birth_message:
+    topic: "${mqtt_root_topic}/${name}/status"
+    payload: "online"
+  will_message:
+    topic: "${mqtt_root_topic}/${name}/status"
+    payload: "offline"
+  keepalive: 60s
+  log_topic: "${mqtt_root_topic}/${name}/log"
+  on_message:
+    - topic: "${mqtt_root_topic}/command"
+      then:
+        - lambda: |-
+            if (x == "calibrate") {
+              id(start_calibration).turn_on();
+            }
+
+# I2C Bus Configuration
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+  id: bus_a
+  frequency: 400kHz
+
+# Global Variables
+globals:
+  - id: presence_counter
+    type: int
+    restore_value: true
+    initial_value: '0'
+  - id: last_presence_time
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+
+# Sensor Configurations
+
+# BME280 Environmental Sensor
+sensor:
+  - platform: bme280
+    temperature:
+      name: "${friendly_name} Temperature"
+      id: temperature_sensor
+      accuracy_decimals: 1
+      filters:
+        - median:
+            window_size: 5
+            send_every: 4
+            send_first_at: 3
+      unit_of_measurement: "°C"
+      device_class: "temperature"
+      state_class: "measurement"
+    pressure:
+      name: "${friendly_name} Pressure"
+      accuracy_decimals: 1
+      filters:
+        - median:
+            window_size: 5
+            send_every: 4
+            send_first_at: 3
+      unit_of_measurement: "hPa"
+      device_class: "pressure"
+      state_class: "measurement"
+    humidity:
+      name: "${friendly_name} Humidity"
+      accuracy_decimals: 1
+      filters:
+        - median:
+            window_size: 5
+            send_every: 4
+            send_first_at: 3
+      unit_of_measurement: "%"
+      device_class: "humidity"
+      state_class: "measurement"
+    address: 0x76
+    update_interval: 60s
+
+  # BH1750 Light Sensor
+  - platform: bh1750
+    name: "${friendly_name} Illuminance"
+    address: 0x23
+    measurement_time: 120ms
+    resolution: 0.5
+    update_interval: 60s
+    unit_of_measurement: "lx"
+    device_class: "illuminance"
+    state_class: "measurement"
+    filters:
+      - median:
+          window_size: 5
+          send_every: 4
+          send_first_at: 3
+
+  # LD2410C mmWave Sensor
+  - platform: gopes
+    ld2410:
+      moving_distance:
+        name: "${friendly_name} Moving Distance"
+        id: moving_distance
+        unit_of_measurement: "m"
+        accuracy_decimals: 2
+      still_distance:
+        name: "${friendly_name} Still Distance"
+        id: still_distance
+        unit_of_measurement: "m"
+        accuracy_decimals: 2
+      moving_energy:
+        name: "${friendly_name} Moving Energy"
+        id: moving_energy
+        unit_of_measurement: "dB"
+      still_energy:
+        name: "${friendly_name} Still Energy"
+        id: still_energy
+        unit_of_measurement: "dB"
+      detection_distance:
+        name: "${friendly_name} Detection Distance"
+        id: detection_distance
+        unit_of_measurement: "m"
+        accuracy_decimals: 2
+
+  # VL53L1X Time of Flight Sensor
+  - platform: vl53l1x
+    name: "${friendly_name} Distance"
+    update_interval: 60ms
+    id: tof_sensor
+    address: 0x29
+    unit_of_measurement: "mm"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    filters:
+      - median:
+          window_size: 5
+          send_every: 4
+          send_first_at: 3
+
+# Binary Sensors
+binary_sensor:
+  # Presence Detection Binary Sensor
+  - platform: gopes
+    presence_detection:
+      name: "${friendly_name} Presence"
+      id: presence_detected
+      device_class: "occupancy"
+      filters:
+        - delayed_off: 30s
+      on_press:
+        then:
+          - globals.set:
+              id: presence_counter
+              value: !lambda "return id(presence_counter) + 1;"
+          - globals.set:
+              id: last_presence_time
+              value: !lambda "return millis() / 1000;"
+      on_release:
+        then:
+          - mqtt.publish:
+              topic: "${mqtt_root_topic}/${name}/presence"
+              payload: "clear"
+
+  # Movement Detection Binary Sensor
+  - platform: gopes
+    movement_detection:
+      name: "${friendly_name} Movement"
+      id: movement_detected
+      device_class: "motion"
+      filters:
+        - delayed_off: 30s
+
+# Text Sensors
+text_sensor:
+  - platform: template
+    name: "${friendly_name} Status"
+    id: sensor_status
+    icon: "mdi:eye"
+    update_interval: 60s
+    lambda: |-
+      if (id(presence_detected).state) {
+        return "Occupied";
+      } else if (id(movement_detected).state) {
+        return "Movement";
+      }
+      return "Clear";
+
+# Number entities for configuration
+number:
+  - platform: template
+    name: "${friendly_name} Detection Timeout"
+    id: detection_timeout
+    min_value: 0
+    max_value: 300
+    step: 1
+    unit_of_measurement: "s"
+    icon: "mdi:timer"
+    optimistic: true
+    restore_value: true
+    initial_value: 30
+    on_value:
+      then:
+        - mqtt.publish:
+            topic: "${mqtt_root_topic}/${name}/config/timeout"
+            payload: !lambda "return std::to_string(x);"
+
+# Switches
+switch:
+  - platform: template
+    name: "${friendly_name} Calibration"
+    id: start_calibration
+    icon: "mdi:calibration"
+    optimistic: true
+    restore_value: false
+    on_turn_on:
+      - delay: 1s
+      - lambda: |-
+          // Add calibration logic here
+      - switch.turn_off: start_calibration
+
+# Web Server Configuration
+web_server:
+  port: 80
+  auth:
+    username: !secret web_username
+    password: !secret web_password
+  include_internal: true
+  version: 2
+  css_include: "gopes_styles.css"
+  css_url: ""  # Empty to prevent loading external resources
+  js_include: "gopes_scripts.js"
+  js_url: ""  # Empty to prevent loading external resources
+
+# Dashboard Import Configuration
+dashboard_import:
+  package_import_url: github://AdmiralArgyle/GOPES/gopes.yaml@main
+  import_full_config: true
+
+# Status LED
+status_led:
+  pin: GPIO2
+
+# Watchdog Timer
+watchdog:
+  timeout: 15s
+
+# Device Groups
+device_class: occupancy
