@@ -62,11 +62,56 @@ web_server:
   port: 80
   include_internal: true
 
-# Enable Home Assistant Dashboard Import
-dashboard_import:
-  package_import_url: https://raw.githubusercontent.com/AdmiralArgyle/GOPES/master/gopes.yaml
-  import_full_config: true
+# UART Configuration for LD2410
+uart:
+  rx_pin: GPIO16
+  tx_pin: GPIO17
+  baud_rate: 256000
 
-# Enable captive portal for setup
-captive_portal:
-  web_server_control: true
+# I2C Configuration for VL53L1X, BME280, and BH1750
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+  frequency: 400kHz
+
+# GOPES Component Configuration
+gopes:
+  # LD2410 Sensor Configuration
+  moving_distance:
+    name: "${friendly_name} Moving Distance"
+  still_distance:
+    name: "${friendly_name} Still Distance"
+  detection_distance:
+    name: "${friendly_name} Detection Distance"
+  moving_energy:
+    name: "${friendly_name} Moving Energy"
+  still_energy:
+    name: "${friendly_name} Still Energy"
+
+  # Environmental Sensors
+  temperature:
+    name: "${friendly_name} Temperature"
+  humidity:
+    name: "${friendly_name} Humidity"
+  pressure:
+    name: "${friendly_name} Pressure"
+  illuminance:
+    name: "${friendly_name} Illuminance"
+
+# MQTT Configuration
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  client_id: "${name}"
+  discovery: true
+  discovery_prefix: homeassistant
+  topic_prefix: "GUPPI/GOPES/${name}"
+  birth_message:
+    topic: "GUPPI/GOPES/${name}/status"
+    payload: "online"
+  will_message:
+    topic: "GUPPI/GOPES/${name}/status"
+    payload: "offline"
+  keepalive: 60s
