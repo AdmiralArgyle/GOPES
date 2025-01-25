@@ -1,0 +1,72 @@
+substitutions:
+  name: gopes-occupancy
+  friendly_name: "GOPES Occupancy"
+
+# Initial minimal device configuration for setup
+esphome:
+  name: "${name}"
+  name_add_mac_suffix: true
+  friendly_name: "${friendly_name}"
+  project:
+    name: "guppi.gopes"
+    version: "1.0.0"
+    description: "GUPPI Occupancy and Human Presence Sensor"
+  external_components:
+    - source:
+        type: git
+        url: https://github.com/AdmiralArgyle/GOPES
+      components: [gopes]
+      refresh: 1d
+
+# Basic ESP32 configuration
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable minimal logging
+logger:
+  level: WARN
+  baud_rate: 0
+
+# Enable API with encryption
+api:
+  encryption:
+    key: !secret api_encryption_key
+  reboot_timeout: 0s
+
+# Enable OTA updates
+ota:
+  password: !secret ota_password
+
+# Enable Improv for initial setup
+improv_serial:
+  friendly_name: "${friendly_name}"
+
+# WiFi configuration with Improv
+wifi:
+  use_address: gopes-occupancy.local
+  output_power: 20dB
+  retry_timeout: 15min
+  ap:
+    ssid: "GOPES-Setup-${name}"
+    password: !secret fallback_ap_password
+  ap_timeout: 3min
+  domain: .local
+  power_save_mode: none
+  reboot_timeout: 0s
+  fast_connect: true
+
+# Enable web server for Improv
+web_server:
+  port: 80
+  include_internal: true
+
+# Enable Home Assistant Dashboard Import
+dashboard_import:
+  package_import_url: https://raw.githubusercontent.com/AdmiralArgyle/GOPES/master/gopes.yaml
+  import_full_config: true
+
+# Enable captive portal for setup
+captive_portal:
+  web_server_control: true
