@@ -1,0 +1,15 @@
+{
+    "domain": "gopes",
+    "name": "GUPPI Occupancy and Presence Enhancement System",
+    "documentation": "https://github.com/AdmiralArgyle/GOPES",
+    "dependencies": ["esphome"],
+    "codeowners": ["@AdmiralArgyle"],
+    "requirements": ["adafruit-circuitpython-vl53l1x>=3.0.0"],
+    "version": "1.0.0",
+    "config_flow": true,
+    "iot_class": "local_push",
+    "loggers": ["gopes"],
+    "bluetooth": {
+      "profiles": ["ld2410"]
+    }
+  }

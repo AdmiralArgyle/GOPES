@@ -1,0 +1,107 @@
+calibrate_sensors:
+  name: Calibrate Sensors
+  description: Trigger sensor calibration and optimization
+  fields:
+    force:
+      name: Force Calibration
+      description: Force recalibration even if recently calibrated
+      required: false
+      default: false
+      selector:
+        boolean:
+
+sync_bluetooth_config:
+  name: Sync Bluetooth Configuration
+  description: Synchronize configuration with LD2410 bluetooth interface
+  fields:
+    direction:
+      name: Sync Direction
+      description: Direction of configuration synchronization
+      required: true
+      selector:
+        select:
+          options:
+            - label: "Pull from LD2410"
+              value: "pull"
+            - label: "Push to LD2410"
+              value: "push"
+            - label: "Bidirectional"
+              value: "both"
+
+reset_tracking:
+  name: Reset Tracking
+  description: Reset location tracking and movement history
+  fields:
+    clear_history:
+      name: Clear History
+      description: Clear movement history data
+      required: false
+      default: true
+      selector:
+        boolean:
+
+update_sensor_config:
+  name: Update Sensor Configuration
+  description: Update sensor configuration parameters
+  fields:
+    sensor_type:
+      name: Sensor Type
+      description: Type of sensor to configure
+      required: true
+      selector:
+        select:
+          options:
+            - label: "LD2410"
+              value: "ld2410"
+            - label: "VL53L1X"
+              value: "vl53l1x"
+    parameters:
+      name: Configuration Parameters
+      description: JSON object containing configuration parameters
+      required: true
+      selector:
+        object:
+
+optimize_fusion:
+  name: Optimize Sensor Fusion
+  description: Optimize sensor fusion parameters
+  fields:
+    algorithm:
+      name: Fusion Algorithm
+      description: Select sensor fusion algorithm
+      required: false
+      selector:
+        select:
+          options:
+            - label: "Kalman Filter"
+              value: "kalman"
+            - label: "Complementary Filter"
+              value: "complementary"
+    parameters:
+      name: Algorithm Parameters
+      description: JSON object containing algorithm parameters
+      required: false
+      selector:
+        object:
+
+update_location_config:
+  name: Update Location Configuration
+  description: Update location tracking configuration
+  fields:
+    mode:
+      name: Tracking Mode
+      description: Select tracking mode
+      required: true
+      selector:
+        select:
+          options:
+            - label: "2D Tracking"
+              value: "2d"
+            - label: "3D Tracking"
+              value: "3d"
+    zone_config:
+      name: Zone Configuration
+      description: JSON object containing zone definitions
+      required: false
+      selector:
+        object:

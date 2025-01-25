@@ -1,0 +1,134 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "GOPES Configuration",
+                "description": "Configure your GOPES occupancy and presence sensor",
+                "data": {
+                    "name": "Device Name",
+                    "location": "Device Location"
+                }
+            },
+            "sensor_config": {
+                "title": "Sensor Configuration",
+                "description": "Configure sensor parameters",
+                "data": {
+                    "sensitivity": "Detection Sensitivity",
+                    "detection_range": "Maximum Detection Range",
+                    "stationary_range": "Stationary Detection Range",
+                    "motion_range": "Motion Detection Range",
+                    "timeout": "Presence Timeout"
+                }
+            },
+            "fusion_config": {
+                "title": "Sensor Fusion Configuration",
+                "description": "Configure sensor fusion parameters",
+                "data": {
+                    "algorithm": "Fusion Algorithm",
+                    "confidence_threshold": "Confidence Threshold"
+                }
+            },
+            "location_config": {
+                "title": "Location Tracking Configuration",
+                "description": "Configure location tracking parameters",
+                "data": {
+                    "mode": "Tracking Mode",
+                    "history_size": "History Size",
+                    "smoothing_factor": "Smoothing Factor"
+                }
+            },
+            "bluetooth_config": {
+                "title": "Bluetooth Configuration",
+                "description": "Configure LD2410 bluetooth synchronization",
+                "data": {
+                    "enabled": "Enable Bluetooth Sync",
+                    "sync_interval": "Sync Interval"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Failed to connect to device",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "abort": {
+            "already_configured": "Device is already configured"
+        }
+    },
+    "services": {
+        "calibrate_sensors": {
+            "name": "Calibrate Sensors",
+            "description": "Trigger sensor calibration and optimization",
+            "fields": {
+                "force": {
+                    "name": "Force Calibration",
+                    "description": "Force recalibration even if recently calibrated"
+                }
+            }
+        },
+        "sync_bluetooth_config": {
+            "name": "Sync Bluetooth Configuration",
+            "description": "Synchronize configuration with LD2410 bluetooth interface",
+            "fields": {
+                "direction": {
+                    "name": "Sync Direction",
+                    "description": "Direction of configuration synchronization"
+                }
+            }
+        },
+        "reset_tracking": {
+            "name": "Reset Tracking",
+            "description": "Reset location tracking and movement history",
+            "fields": {
+                "clear_history": {
+                    "name": "Clear History",
+                    "description": "Clear movement history data"
+                }
+            }
+        }
+    },
+    "state": {
+        "occupied": "Occupied",
+        "clear": "Clear",
+        "moving": "Moving",
+        "stationary": "Stationary"
+    },
+    "entity": {
+        "sensor": {
+            "moving_distance": {
+                "name": "Moving Distance",
+                "state": {
+                    "unavailable": "Unavailable"
+                }
+            },
+            "still_distance": {
+                "name": "Still Distance",
+                "state": {
+                    "unavailable": "Unavailable"
+                }
+            },
+            "detection_distance": {
+                "name": "Detection Distance",
+                "state": {
+                    "unavailable": "Unavailable"
+                }
+            }
+        },
+        "binary_sensor": {
+            "presence": {
+                "name": "Presence Detection",
+                "state": {
+                    "on": "Present",
+                    "off": "Clear"
+                }
+            },
+            "movement": {
+                "name": "Movement Detection",
+                "state": {
+                    "on": "Moving",
+                    "off": "Still"
+                }
+            }
+        }
+    }
+}
