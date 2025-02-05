@@ -7,13 +7,13 @@ external_components:
 
 uart:
   id: uart_bus
-  rx_pin:
-    number: GPIO3
+  rx_pin: 
+    number: GPIO16
     mode:
       input: true
       pullup: true
-  tx_pin:
-    number: GPIO1
+  tx_pin: 
+    number: GPIO17
     mode:
       input: true
       pullup: true
