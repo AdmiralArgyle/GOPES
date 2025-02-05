@@ -1,6 +1,10 @@
-esphome:
-  name: guppi-mt-occ-2450-e280-1750
+substitutions:
+  device_name: "guppi-mt-occ-2450-e280-1750"
   friendly_name: "GUPPI Multi Target Occupancy Sensor"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
 
 esp32:
   board: esp32dev
