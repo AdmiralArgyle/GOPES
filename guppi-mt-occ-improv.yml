@@ -1,0 +1,30 @@
+esphome:
+  name: guppi-mt-occ-2450-e280-1750
+  friendly_name: "GUPPI Multi Target Occupancy Sensor"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+    version: latest
+
+# Leave Wi-Fi credentials empty to trigger provisioning.
+wifi:
+  ssid: ""
+  password: ""
+
+# Enable Improv provisioning (this enables both Wi-Fi AP and BLE advertisement)
+improv:
+
+logger:
+  level: DEBUG
+  baud_rate: 115200
+
+api:
+ota:
+
+# Include the shared configuration from GitHub.
+packages:
+  guppi-occ-2450-e280-1750_common:
+    url: https://raw.githubusercontent.com/AdmiralArgyle/GOPES/master/GUPPI%20MT-Occ-2450-e280-1750.yaml
+    refresh: 0s
