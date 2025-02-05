@@ -10,25 +10,30 @@ esp32:
   board: esp32dev
   framework:
     type: arduino
-    version: latest
 
 # Leave Wi-Fi credentials empty to trigger provisioning.
 wifi:
-  ssid: ""
-  password: ""
 
 # Enable Improv provisioning (this enables both Wi-Fi AP and BLE advertisement)
-improv:
+improv_serial:
 
 logger:
-  level: DEBUG
+  level: ERROR
+#  level: DEBUG
   baud_rate: 115200
 
 api:
-ota:
 
+captive_portal:
+
+esp32_improv:
+  authorizer: none
+  
 # Include the shared configuration from GitHub.
 packages:
   guppi-occ-2450-e280-1750_common:
-    url: https://raw.githubusercontent.com/AdmiralArgyle/GOPES/master/guppi-mt-Occ-2450-e280-1750.yaml
+    url: https://github.com/AdmiralArgyle/GOPES/
+    ref: master
+    files:
+      - "guppi-mt-Occ-2450-e280-1750.yaml"
     refresh: 0s
