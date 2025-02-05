@@ -1,0 +1,7 @@
+# # Device-specific configuration created by ESPHome
+# esphome:
+#   name: mynewdevice
+#   # ... (other automatically generated device-specific settings)
+
+# # At the end, include the shared configuration:
+<<: !include common_config.yaml
