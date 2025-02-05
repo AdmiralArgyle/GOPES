@@ -30,5 +30,5 @@ ota:
 # Include the shared configuration from GitHub.
 packages:
   guppi-occ-2450-e280-1750_common:
-    url: https://raw.githubusercontent.com/AdmiralArgyle/GOPES/master/GUPPI%20MT-Occ-2450-e280-1750.yaml
+    url: https://raw.githubusercontent.com/AdmiralArgyle/GOPES/master/guppi-mt-Occ-2450-e280-1750.yaml
     refresh: 0s
