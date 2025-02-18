@@ -10,12 +10,12 @@ substitutions:
   project_name: "GUPPI.ST-OCC-2410-BLE"
   project_version: "25.2.14.1"
 # **IMPORTANT** - Add API key here for copy/paste convenience
-  api_key: "xE5i2NDwKAP1sJMcjNnI7pL1zoQZehsmel3I2oafqw0="
+  api_key: "abcxyz123="
 # Specify below pin numbers for UART, GPIO, and I2C connections
 # Delete if not needed
   tx_pin_ld2410: GPIO21
   rx_pin_ld2410: GPIO20
-#  motion_gpio: GPIO4
+  motion_gpio: GPIO4
 #  sda_pin_i2c: GPIO6
 #  scl_pin_i2c: GPIO7
 
@@ -382,12 +382,12 @@ binary_sensor:
     id: ink_ha_connected
 
   # LD2410 radar binary sensors
-#  - platform: gpio
-#    pin: 
-#      number: "${motion_gpio}"  # OUT pin of LD2410 connected here
-#      mode: INPUT_PULLUP
-#    name: "LD2410C Motion Detected"
-#    device_class: motion
+  - platform: gpio
+    pin: 
+      number: "${motion_gpio}"  # OUT pin of LD2410 connected here
+      mode: INPUT_PULLUP
+    name: "LD2410C Motion Detected"
+    device_class: motion
 
   - platform: ld2410
     has_target:
