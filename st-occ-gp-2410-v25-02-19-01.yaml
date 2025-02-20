@@ -142,7 +142,7 @@ uart:
 
 # LD2410 Radar Configuration
 ld2410:
-  throttle: 1500ms
+  throttle: 500ms
   id: ld2410_radar
 
 # User configurable radar configuration parameters
