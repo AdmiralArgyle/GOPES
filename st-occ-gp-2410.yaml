@@ -13,8 +13,8 @@ substitutions:
   api_key: "abcxyz123="
 # Specify below pin numbers for UART, GPIO, and I2C connections
 # Delete if not needed
-  tx_pin_ld2410: GPIO21
-  rx_pin_ld2410: GPIO20
+  tx_pin_uart: GPIO21
+  rx_pin_uart: GPIO20
   motion_gpio: GPIO4
 #  sda_pin_i2c: GPIO6
 #  scl_pin_i2c: GPIO7
@@ -126,12 +126,12 @@ output:
 uart:
   id: uart_bus
   tx_pin: 
-    number: ${tx_pin_ld2410}
+    number: ${tx_pin_uart}
 #    mode:
 #      input: true
 #      pullup: true
   rx_pin: 
-    number: ${rx_pin_ld2410}
+    number: ${rx_pin_uart}
 #    mode:
 #      input: true
 #      pullup: true
@@ -406,8 +406,13 @@ binary_sensor:
     pin: 
       number: "${motion_gpio}"  # OUT pin of LD2410 connected here
       mode: INPUT_PULLUP
-    name: "LD2410C Motion Detected"
+    name: "Motion Detected"
+    id": motion_detected
     device_class: motion
+    filters:
+      - delayed_on: 10ms  # Optional: Debounce filter to avoid false triggers.
+      - delayed_off: 10ms
+
 
  # Radar zone occupancy based on detection distance and configured zone boundaries
   - platform: template
@@ -471,7 +476,7 @@ text_sensor:
     version:
       name: "Radar Firmware Version"
     mac_address:
-      name: "LD2410 BT MAC"
+      name: "Radar BT MAC"
 
   - platform: debug
     device:
@@ -504,7 +509,7 @@ button:
 switch:
   - platform: ld2410
     bluetooth:
-      name: "ld2410 Bluetooth"
+      name: "Radar Bluetooth"
       id: radar_bluetooth
     engineering_mode:
       name: "Radar Engineering Mode"
@@ -522,7 +527,7 @@ switch:
 select:
   - platform: ld2410
     distance_resolution:
-      name: "ld2410 Gate Size"
+      name: "Radar Gate Size"
       disabled_by_default: true
     baud_rate:
       name: baud rate

@@ -1,32 +1,73 @@
+####################################
+# Start Substitutions
+####################################
+
 substitutions:
+# Replace name with you sensor name
   name: st-occ-2410
   friendly_name: "ST Occ 2410"
-#  Specify below pin numbers of your ld2410
-  tx_pin_ld2410: GPIO21
-  rx_pin_ld2410: GPIO20
+  comment_text: "Generally Unstable and Poorly Produced Inventions - Single-target Human Presence and Occupancy Sensor (ESP32/LD2410) with Bluetooth Tracker"
+  project_name: "GUPPI.ST-OCC-2410-BLE"
+  project_version: "25.2.20.1"
+# **IMPORTANT** - Add API key here for copy/paste convenience
+  api_key: "abcxyz123="
+# Specify below pin numbers for UART, GPIO, and I2C connections
+# Delete if not needed
+  tx_pin_uart: GPIO21
+  rx_pin_uart: GPIO20
+#  motion_gpio: GPIO4
+#  sda_pin_i2c: GPIO6
+#  scl_pin_i2c: GPIO7
+
+####################################
+# End Substitutions
+####################################
 
 esphome:
   name: "${name}"
   friendly_name: "${friendly_name}"
-  comment: "Single-target Human Presence and Occupancy Sensor by Zone (ESP32/LD2410) with Bluetooth Tracker"
+  comment: "${comment_text}"
   project: 
-    name: "guppi.st-occ-2410"
-    version: "25.2.12.0"
+    name: "${project_name}"
+    version: "${project_version}"
 
 esp32:
   board: esp32-c3-devkitm-1
   framework:
     type: esp-idf
+    sdkconfig_options:
+      # @grigi found in testing that these options resulted in better responsiveness.
+      # BLE 4.2 is supported by ALL ESP32 boards that have bluetooth, the original and derivatives.
+      CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y
+      # Also enable this on any derivative boards (S2, C3 etc) but not the original ESP32.
+      CONFIG_BT_BLE_50_FEATURES_SUPPORTED: y
+      # Extend the watchdog timeout, so the device reboots if the device appears locked up for over 10 seconds.
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "10"
 
 # Enable logging at DEBUG level for detailed output during development
 logger:
-#  level: INFO
-  level: DEBUG
+  # 0 Enables logging, but disables serial-port logging to free CPU and memory
+  baud_rate: 0
+  #  Disable DEBUG after testing
+#  level: DEBUG
 
 # Enable Home Assistant API
 api:
   encryption:
-    key: "xE5i2NDwKAP1sJMcjNnI7pL1zoQZehsmel3I2oafqw0="
+    key: "${api_key}"
+  # Only enable BLE tracking when wifi is up and api is connected
+  # Gives single-core ESP32-C3 devices time to manage wifi and authenticate with api
+  on_client_connected:
+     - esp32_ble_tracker.start_scan:
+        continuous: true
+  # Disable BLE tracking when there are no api connections live
+  on_client_disconnected:
+    if:
+      condition:
+        not:
+          api.connected:
+      then:
+        - esp32_ble_tracker.stop_scan:
 
 ota:
   - platform: esphome
@@ -39,7 +80,6 @@ wifi:
     password: !secret wifi_2_password
   - ssid: !secret wifi_3_ssid
     password: !secret wifi_3_password
-  #power_save_mode: none
   output_power: 8.5dB
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
@@ -48,20 +88,26 @@ wifi:
     password: !secret fallback_ap_password
 
 # Web server (optional, consider disabling in production)
-web_server:
-  port: 80
+#web_server:
+#  port: 80
 
 # Bluetooth Tracker & Proxy configuration
-# Use esp-idf platform - not arduino
-# Disable web server - don't use both at the same time
-# esp32_ble_tracker:
-#   scan_parameters:
-#     interval: 1100ms
-#     window: 1100ms
-#     active: true
+# Use esp-idf platform if possible - not arduino - for better memory management
+esp32_ble_tracker:
+  scan_parameters:
+    # Don't auto start BLE scanning, we control it in the `api` block's automation.
+    continuous: False
+    
+    active: True  # send scan-request packets to gather more info, like device name for some devices.
 
-# bluetooth_proxy:
-#   active: true
+    interval: 320ms  # default 320ms - how long to spend on each advert channel
+    window:   300ms  # default 30ms - how long to actually "listen" in each interval. Reduce this if device is unstable.
+    # If the device cannot keep up or becomes unstable, reduce the "window" setting. This may be
+    # required if your device is controlling other sensors or doing PWM for lights etc.
+
+bluetooth_proxy:
+  # Allows outbound connections from HA to devices.
+  active: true
 
 captive_portal:
 
@@ -80,12 +126,12 @@ output:
 uart:
   id: uart_bus
   tx_pin: 
-    number: ${tx_pin_ld2410}
+    number: ${tx_pin_uart}
 #    mode:
 #      input: true
 #      pullup: true
   rx_pin: 
-    number: ${rx_pin_ld2410}
+    number: ${rx_pin_uart}
 #    mode:
 #      input: true
 #      pullup: true
@@ -96,7 +142,7 @@ uart:
 
 # LD2410 Radar Configuration
 ld2410:
-  throttle: 1500ms
+  throttle: 500ms
   id: ld2410_radar
 
 # User configurable radar configuration parameters
@@ -219,19 +265,7 @@ number:
     unit_of_measurement: "cm"
 
 sensor:
-  # LD2410 radar sensor readings
-  - platform: ld2410
-    moving_distance:
-      name : Moving Distance
-    still_distance:
-      name: Still Distance
-    moving_energy:
-      name: Move Energy
-    still_energy:
-      name: Still Energy
-    detection_distance:
-      name: Detection Distance
-
+   # LD2410 radar sensor readings
   - platform: ld2410
     moving_distance:
       name: "Radar Moving Distance"
@@ -251,84 +285,104 @@ sensor:
     g0:
       move_energy:
         name: "g0 move energy"
+        id: g0_move_energy
         state_class: measurement
       still_energy:
         name: "g0 still energy"
+        id: g0_still_energy
         state_class: measurement
     g1:
       move_energy:
         name: "g1 move energy"
+        id: g1_move_energy
         state_class: measurement
       still_energy:
         name: "g1 still energy"
+        id: g1_still_energy
         state_class: measurement
     g2:
       move_energy:
         name: "g2 move energy"
+        id: g2_move_energy
         state_class: measurement
       still_energy:
         name: "g2 still energy"
+        id: g2_still_energy
         state_class: measurement
     g3:
       move_energy:
         name: "g3 move energy"
+        id: g3_move_energy
         state_class: measurement
       still_energy:
         name: "g3 still energy"
+        id: g3_still_energy
         state_class: measurement
     g4:
       move_energy:
         name: "g4 move energy"
+        id: g4_move_energy
         state_class: measurement
       still_energy:
         name: "g4 still energy"
+        id: g4_still_energy
         state_class: measurement
     g5:
       move_energy:
         name: "g5 move energy"
+        id: g5_move_energy
         state_class: measurement
       still_energy:
         name: "g5 still energy"
+        id: g5_still_energy
         state_class: measurement
     g6:
       move_energy:
         name: "g6 move energy"
+        id: g6_move_energy
         state_class: measurement
       still_energy:
         name: "g6 still energy"
+        id: g6_still_energy
         state_class: measurement
     g7:
       move_energy:
         name: "g7 move energy"
+        id: g7_move_energy
         state_class: measurement
       still_energy:
         name: "g7 still energy"
+        id: g7_still_energy
         state_class: measurement
     g8:
       move_energy:
         name: "g8 move energy"
+        id: g8_move_energy
         state_class: measurement
       still_energy:
         name: "g8 still energy"
+        id: g8_still_energy
         state_class: measurement
 
   # Uptime sensor
   - platform: uptime
     id: uptime_sensor
     internal: true
-    update_interval: 60s
+    entity_category: "diagnostic"
+    update_interval: 30s
 
   # WiFi signal strength sensor
   - platform: wifi_signal
     name: RSSI
     id: wifi_signal_db
-    update_interval: 60s
+    update_interval: 30s
     entity_category: "diagnostic"
 
   # Internal ESP temperature sensor
   - platform: internal_temperature
     name: "ESP Temperature"
     id: sys_esp_temperature
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: status
@@ -409,7 +463,13 @@ text_sensor:
     version:
       name: "Radar Firmware Version"
     mac_address:
-      name: "LD2410 BT MAC"
+      name: "Radar BT MAC"
+
+  - platform: debug
+    device:
+      name: "Device Info"
+    reset_reason:
+      name: "Reset Reason"
 
 debug:
   update_interval: 30s
@@ -436,7 +496,7 @@ button:
 switch:
   - platform: ld2410
     bluetooth:
-      name: "ld2410 Bluetooth"
+      name: "Radar Bluetooth"
       id: radar_bluetooth
     engineering_mode:
       name: "Radar Engineering Mode"
@@ -454,7 +514,7 @@ switch:
 select:
   - platform: ld2410
     distance_resolution:
-      name: "ld2410 Gate Size"
+      name: "Radar Gate Size"
       disabled_by_default: true
     baud_rate:
       name: baud rate
@@ -462,4 +522,3 @@ select:
       name: light function
     out_pin_level:
       name: out pin level
-
